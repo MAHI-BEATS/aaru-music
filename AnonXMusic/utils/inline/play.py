@@ -18,17 +18,18 @@ PREMIUM_EMOJIS = [
 def get_style_map():
     styles = [ButtonStyle.PRIMARY, ButtonStyle.SUCCESS, ButtonStyle.DANGER]
     random.shuffle(styles)
-    # Row me buttons ke hisaab se color assign hoga (1, 2, 3, ya 5 buttons wali lines)
     return {1: styles[0], 2: styles[1], 3: styles[2], 5: styles[0]}
 
 # 🔘 Smart Button Creator
 def create_btn(text, cb=None, url=None, style=ButtonStyle.PRIMARY, no_emoji=False):
     kwargs = {"text": text, "style": style}
-    if cb: kwargs["callback_data"] = cb
-    if url: kwargs["url"] = url
-    if not no_emoji: kwargs["icon_custom_emoji_id"] = random.choice(PREMIUM_EMOJIS)
+    if cb: 
+        kwargs["callback_data"] = cb
+    if url: 
+        kwargs["url"] = url
+    if not no_emoji: 
+        kwargs["icon_custom_emoji_id"] = random.choice(PREMIUM_EMOJIS)
     return InlineKeyboardButton(**kwargs)
-
 
 def track_markup(_, videoid, user_id, channel, fplay):
     s_map = get_style_map()
@@ -43,40 +44,78 @@ def track_markup(_, videoid, user_id, channel, fplay):
     ]
     return buttons
 
-
 def stream_markup_timer(_, chat_id, played, dur):
+    s_map = get_style_map()
     played_sec = time_to_seconds(played)
     duration_sec = time_to_seconds(dur)
     percentage = (played_sec / duration_sec) * 100
-    umm = math.floor(percentage)
-    if 0 < umm <= 10: bar = "◉—————————"
-    elif 10 < umm < 20: bar = "—◉————————"
-    elif 20 <= umm < 30: bar = "——◉———————"
-    elif 30 <= umm < 40: bar = "———◉——————"
-    elif 40 <= umm < 50: bar = "————◉—————"
-    elif 50 <= umm < 60: bar = "—————◉————"
-    elif 60 <= umm < 70: bar = "——————◉———"
-    elif 70 <= umm < 80: bar = "———————◉——"
-    elif 80 <= umm < 95: bar = "————————◉—"
-    else: bar = "—————————◉"
     
-    s_map = get_style_map()
+    umm = math.floor(percentage)
+    if 0 < umm <= 10:
+        bar = "𖣐—————————"
+    elif 10 < umm < 20:
+        bar = "—𖣐————————"
+    elif 20 <= umm < 30:
+        bar = "—𖣐———————"
+    elif 30 <= umm < 40:
+        bar = "——𖣐——————"
+    elif 40 <= umm < 50:
+        bar = "———𖣐—————"
+    elif 50 <= umm < 60:
+        bar = "————𖣐————"
+    elif 60 <= umm < 70:
+        bar = "—————𖣐———"
+    elif 70 <= umm < 80:
+        bar = "——————𖣐——"
+    elif 80 <= umm < 95:
+        bar = "———————𖣐—"
+    else:
+        bar = "————————𖣐"
+
     buttons = [
         [
-            # Progress bar me emoji nahi lagaya taaki clean lage
-            create_btn(f"{played} {bar} {dur}", cb="GetTimer", style=s_map[1], no_emoji=True)
+            create_btn(
+                text=f"{played} {bar} {dur}",
+                cb="GetTimer",
+                style=s_map[5], 
+                no_emoji=True
+            )
         ],
-        [   
-            # Media controls me colors random honge, par emojis nahi honge
+        [
+            # Media controls - 5 buttons row
             create_btn("▷", cb=f"ADMIN Resume|{chat_id}", style=s_map[5], no_emoji=True),
             create_btn("II", cb=f"ADMIN Pause|{chat_id}", style=s_map[5], no_emoji=True),
             create_btn("↻", cb=f"ADMIN Replay|{chat_id}", style=s_map[5], no_emoji=True),
             create_btn("‣‣I", cb=f"ADMIN Skip|{chat_id}", style=s_map[5], no_emoji=True),
             create_btn("▢", cb=f"ADMIN Stop|{chat_id}", style=s_map[5], no_emoji=True),
         ],
+        [
+            create_btn(
+                text=_["S_B_3"], 
+                url=f"https://t.me/{app.username}?startgroup=true", 
+                style=s_map[5], 
+                no_emoji=True
+            )
+        ],
+        [
+            create_btn(
+                text="• ᴏᴡɴᴇʀ •", 
+                url="https://t.me/ll_DEVIL_SHIV_ll", 
+                style=s_map[5], 
+                no_emoji=True
+            ),
+            create_btn(
+                text="• ɢʀᴏᴜᴘ •", 
+                url="https://t.me/BETABOT_SUPPORT", 
+                style=s_map[5], 
+                no_emoji=True
+            ),
+        ],
+        [
+            create_btn(text=_["CLOSE_BUTTON"], cb="close", style=s_map[5], no_emoji=True)
+        ],
     ]
     return buttons
-
 
 def stream_markup(_, chat_id):
     s_map = get_style_map()
@@ -88,9 +127,33 @@ def stream_markup(_, chat_id):
             create_btn("‣‣I", cb=f"ADMIN Skip|{chat_id}", style=s_map[5], no_emoji=True),
             create_btn("▢", cb=f"ADMIN Stop|{chat_id}", style=s_map[5], no_emoji=True),
         ],
+        [
+            create_btn(
+                text=_["S_B_3"], 
+                url=f"https://t.me/{app.username}?startgroup=true", 
+                style=s_map[5], 
+                no_emoji=True
+            )
+        ],
+        [
+            create_btn(
+                text="• ᴏᴡɴᴇʀ •", 
+                url="https://t.me/ll_DEVIL_SHIV_ll", 
+                style=s_map[5], 
+                no_emoji=True
+            ),
+            create_btn(
+                text="• ɢʀᴏᴜᴘ •", 
+                url="https://t.me/BETABOT_SUPPORT", 
+                style=s_map[5], 
+                no_emoji=True
+            ),
+        ],
+        [
+            create_btn(text=_["CLOSE_BUTTON"], cb="close", style=s_map[5], no_emoji=True)
+        ],
     ]
     return buttons
-
 
 def playlist_markup(_, videoid, user_id, ptype, channel, fplay):
     s_map = get_style_map()
@@ -105,7 +168,6 @@ def playlist_markup(_, videoid, user_id, ptype, channel, fplay):
     ]
     return buttons
 
-
 def livestream_markup(_, videoid, user_id, mode, channel, fplay):
     s_map = get_style_map()
     buttons = [
@@ -117,7 +179,6 @@ def livestream_markup(_, videoid, user_id, mode, channel, fplay):
         ],
     ]
     return buttons
-
 
 def slider_markup(_, videoid, user_id, query, query_type, channel, fplay):
     query = f"{query[:20]}"
