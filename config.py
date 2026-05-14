@@ -37,15 +37,15 @@ HEROKU_API_KEY = getenv("HEROKU_API_KEY")
 
 UPSTREAM_REPO = getenv(
     "UPSTREAM_REPO",
-    "https://github.com/ZXCVBNMASDFGHJKLQWERTYUIOP0786/ShivMusicBot",
+    "https://github.com/MAHI-BEATS/ShivMusicBot",
 )
 UPSTREAM_BRANCH = getenv("UPSTREAM_BRANCH", "main")
 GIT_TOKEN = getenv(
     "GIT_TOKEN", None
 )  # Fill this variable if your upstream repository is private
 
-SUPPORT_CHANNEL = getenv("SUPPORT_CHANNEL", "https://t.me/dealmagnet99")
-SUPPORT_CHAT = getenv("SUPPORT_CHAT", "https://t.me/dealmagnet9")
+SUPPORT_CHANNEL = getenv("SUPPORT_CHANNEL", "https://t.me/betabot_hub")
+SUPPORT_CHAT = getenv("SUPPORT_CHAT", "https://t.me/betabot_support")
 
 # Set this to True if you want the assistant to automatically leave chats after an interval
 AUTO_LEAVING_ASSISTANT = bool(getenv("AUTO_LEAVING_ASSISTANT", True))
@@ -89,23 +89,30 @@ autoclean = []
 confirmer = {}
 file_cache: dict[str, float] = {}
 
-START_IMG_URL = ["https://files.catbox.moe/8qb3b1.jpg",
-                 "https://files.catbox.moe/8qb3b1.jpg",
-                 "https://te.legra.ph/file/5fd13f2cc0d03bce9f7f2.jpg"]
+START_IMG_URL = [
+    "https://files.catbox.moe/49spk2.jpg",
+    "https://files.catbox.moe/fj3cfe.jpg",
+    "https://files.catbox.moe/fj3cfe.jpg",
+    "https://files.catbox.moe/7azd4u.jpg",
+    "https://files.catbox.moe/je87i5.jpg",
+    "https://files.catbox.moe/u4db8r.jpg",
+    "https://files.catbox.moe/ubyk6k.jpg",
+                ]
     
 PING_IMG_URL = getenv(
-    "PING_IMG_URL", "https://files.catbox.moe/e2aedb.jpg"
+    "PING_IMG_URL", "https://files.catbox.moe/zgy7zs.jpg"
 )
-PLAYLIST_IMG_URL = "https://graph.org/file/c95a687e777b55be1c792.jpg"
-STATS_IMG_URL = "https://telegra.ph/file/edd388a42dd2c499fd868.jpg"
+PLAYLIST_IMG_URL = "https://files.catbox.moe/zgy7zs.jpg"
+STATS_IMG_URL = "https://files.catbox.moe/zgy7zs.jpg"
 TELEGRAM_AUDIO_URL = "https://telegra.ph/file/492a3bb2e880d19750b79.jpg"
 TELEGRAM_VIDEO_URL = "https://telegra.ph/file/492a3bb2e880d19750b79.jpg"
 STREAM_IMG_URL = "https://graph.org/file/ff2af8d4d10afa1baf49e.jpg"
 SOUNCLOUD_IMG_URL = "https://graph.org/file/c95a687e777b55be1c792.jpg"
-YOUTUBE_IMG_URL = "https://graph.org/file/e8730fdece86a1166f608.jpg"
+YOUTUBE_IMG_URL = "https://files.catbox.moe/zgy7zs.jpg"
 SPOTIFY_ARTIST_IMG_URL = "https://graph.org/file/0bb6f36796d496b4254ff.jpg"
 SPOTIFY_ALBUM_IMG_URL = "https://graph.org/file/0bb6f36796d496b4254ff.jpg"
 SPOTIFY_PLAYLIST_IMG_URL = "https://graph.org/file/0bb6f36796d496b4254ff.jpg"
+
 
 
 
