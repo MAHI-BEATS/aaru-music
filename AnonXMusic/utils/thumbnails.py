@@ -38,7 +38,7 @@ def clear(text):
     words = text.split()
     title = ""
     for word in words:
-        if len(title) + len(word) < 60:
+        if len(title) + len(word) < 45:  # Reduced from 60 to 45 for smaller title
             title += " " + word
     return title.strip()
 
@@ -172,26 +172,27 @@ async def get_thumb(videoid, user_id):
             u_glow = add_neon_glow(u_circle, glow_color=(0, 255, 255))
             background.paste(u_glow, (1410, 310), u_glow)
 
-        # 4. ALL TEXT INSIDE GLASS PANEL (Adjusted positions)
-        # Top branding texts - now inside panel (offset by panel position 50,50)
+        # 4. ALL TEXT INSIDE GLASS PANEL (Clean layout)
+        # Top branding texts
         draw_text_with_glow(draw, (90+50, 85+50), f"{unidecode(app.name).upper()}", heading_font, (132, 224, 240), (132, 224, 240, 120))
         draw_text_with_glow(draw, (1500+50, 85+50), "NOW PLAYING", heading_font, (132, 224, 240), (132, 224, 240, 120))
 
-        # Title and info - already inside
+        # Smaller Song Title
         draw.text((750, 320+50), clear(title), fill="white", font=title_font)
+        
+        # Info texts
         draw.text((750, 430+50), f"Artist: {channel}", fill=(220, 220, 220), font=small_font)
         draw.text((750, 490+50), f"Views: {views}", fill=(180, 180, 180), font=small_font)
         draw.text((750, 550+50), f"Duration: {duration}", fill=(180, 180, 180), font=small_font)
-        draw.text((1440+50, 720+50), "REQUESTED BY", fill="white", font=small_font)
 
-        # 5. Progress Bar - inside panel
+        # 5. Progress Bar
         bar_x1, bar_x2, bar_y = 750, 1800, 840+50
         draw.rounded_rectangle((bar_x1, bar_y, bar_x2, bar_y + 14), radius=7, fill=(255, 255, 255, 40))
         draw.rounded_rectangle((bar_x1, bar_y, bar_x1 + 450, bar_y + 14), radius=7, fill=(0, 255, 255, 180))
         draw.text((bar_x1, bar_y + 35), "00:00", fill="white", font=small_font)
         draw.text((bar_x2 - 110, bar_y + 35), duration, fill="white", font=small_font)
 
-        # 6. Footer branding - inside panel
+        # 6. Footer branding
         draw_text_with_glow(draw, (90+50, 940-50), "BETA BOT HUB", branding_font, (132, 224, 240), (0, 255, 255, 150))
         draw_text_with_glow(draw, (1480+50, 940-50), "👑 THE SHIV", branding_font, (255, 60, 160), (255, 0, 170, 150))
 
