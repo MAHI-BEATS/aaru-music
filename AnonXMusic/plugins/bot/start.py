@@ -35,13 +35,20 @@ from strings import get_string
 async def start_pm(client, message: Message, _):
     await add_served_user(message.from_user.id)
     
-    # Loading animation - Sticker se PEHLE 🔥
+    # Loading animation with typing actions instead of edit 🔥
+    await app.send_chat_action(message.chat.id, "typing")
     accha = await message.reply_text("**Sᴛᴀʀᴛɪɴɢ....🥀**")
-    await asyncio.sleep(1)
-    await accha.edit("**I..Aᴍ..Aʟɪᴠe..Bᴀʙʏ...🍫**")
-    await asyncio.sleep(0.5)
-    await accha.edit("**Bᴇᴛᴀ..Bᴏᴛs.....❤️❤️v**")
-    await asyncio.sleep(1)
+    await asyncio.sleep(1.2)  # Time according to text length (12 chars)
+    
+    await accha.delete()
+    await app.send_chat_action(message.chat.id, "typing")
+    accha = await message.reply_text("**I..Aᴍ..Aʟɪᴠe..Bᴀʙʏ...🍫**")
+    await asyncio.sleep(1.8)  # Longer for 18 chars + multiple dots
+    
+    await accha.delete()
+    await app.send_chat_action(message.chat.id, "typing")
+    accha = await message.reply_text("**Bᴇᴛᴀ..Bᴏᴛs.....❤️❤️**")
+    await asyncio.sleep(1.5)  # Medium time for 15 chars + emojis
     await accha.delete()
     
     if len(message.text.split()) > 1:
@@ -135,7 +142,7 @@ async def start_gp(client, message: Message, _):
     except ChannelPrivate:
         return
     except SlowmodeWait as e:
-        await asyncio.sleep(e.value)  # Fixed: Added await
+        await asyncio.sleep(e.value)
         try:
             await message.reply_photo(
                 photo=random.choice(config.START_IMG_URL),
