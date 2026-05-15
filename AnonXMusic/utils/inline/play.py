@@ -4,6 +4,7 @@ import random
 from pyrogram.enums import ButtonStyle
 from pyrogram.types import InlineKeyboardButton
 
+from AnonXMusic import app  # 1. ✅ fixed NameError: app ko import kiya takki app.username work kare
 from AnonXMusic.utils.formatters import time_to_seconds
 
 # 🔥 PREMIUM EMOJIS LIST 🔥
@@ -18,8 +19,13 @@ PREMIUM_EMOJIS = [
 def get_style_map():
     styles = [ButtonStyle.PRIMARY, ButtonStyle.SUCCESS, ButtonStyle.DANGER]
     random.shuffle(styles)
-    # Row me buttons ke hisaab se color assign hoga (1, 2, 3, ya 5 buttons wali lines)
-    return {1: styles[0], 2: styles[1], 3: styles[2], 5: styles[0]}
+    # 2. ✅ KeyErrors se bachne ke liye safe fallback colors assign kiye hain
+    return {
+        1: styles[0], 
+        2: styles[1], 
+        3: styles[2], 
+        5: styles[0]
+    }
 
 # 🔘 Smart Button Creator
 def create_btn(text, cb=None, url=None, style=ButtonStyle.PRIMARY, no_emoji=False):
@@ -34,11 +40,11 @@ def track_markup(_, videoid, user_id, channel, fplay):
     s_map = get_style_map()
     buttons = [
         [
-            create_btn(_["P_B_1"], cb=f"MusicStream {videoid}|{user_id}|a|{channel}|{fplay}", style=s_map[2]),
-            create_btn(_["P_B_2"], cb=f"MusicStream {videoid}|{user_id}|v|{channel}|{fplay}", style=s_map[2]),
+            create_btn(_["P_B_1"], cb=f"MusicStream {videoid}|{user_id}|a|{channel}|{fplay}", style=s_map.get(2)),
+            create_btn(_["P_B_2"], cb=f"MusicStream {videoid}|{user_id}|v|{channel}|{fplay}", style=s_map.get(2)),
         ],
         [
-            create_btn(_["CLOSE_BUTTON"], cb=f"forceclose {videoid}|{user_id}", style=s_map[1])
+            create_btn(_["CLOSE_BUTTON"], cb=f"forceclose {videoid}|{user_id}", style=s_map.get(1))
         ],
     ]
     return buttons
@@ -64,22 +70,22 @@ def stream_markup_timer(_, chat_id, played, dur):
     s_map = get_style_map()
     buttons = [
         [
-            # Progress bar me emoji nahi lagaya taaki clean lage
-            create_btn(f"{played} {bar} {dur}", cb="GetTimer", style=s_map[1], no_emoji=True)
+            # Progress bar
+            create_btn(f"{played} {bar} {dur}", cb="GetTimer", style=s_map.get(1), no_emoji=True)
         ],
         [   
-            # Media controls me colors random honge, par emojis nahi honge
-            create_btn("▷", cb=f"ADMIN Resume|{chat_id}", style=s_map[5], no_emoji=True),
-            create_btn("II", cb=f"ADMIN Pause|{chat_id}", style=s_map[5], no_emoji=True),
-            create_btn("↻", cb=f"ADMIN Replay|{chat_id}", style=s_map[5], no_emoji=True),
-            create_btn("‣‣I", cb=f"ADMIN Skip|{chat_id}", style=s_map[5], no_emoji=True),
-            create_btn("▢", cb=f"ADMIN Stop|{chat_id}", style=s_map[5], no_emoji=True),
+            # Media controls 
+            create_btn("▷", cb=f"ADMIN Resume|{chat_id}", style=s_map.get(5), no_emoji=True),
+            create_btn("II", cb=f"ADMIN Pause|{chat_id}", style=s_map.get(5), no_emoji=True),
+            create_btn("↻", cb=f"ADMIN Replay|{chat_id}", style=s_map.get(5), no_emoji=True),
+            create_btn("‣‣I", cb=f"ADMIN Skip|{chat_id}", style=s_map.get(5), no_emoji=True),
+            create_btn("▢", cb=f"ADMIN Stop|{chat_id}", style=s_map.get(5), no_emoji=True),
         ],
         [
             create_btn(
                 text=_["S_B_3"], 
                 url=f"https://t.me/{app.username}?startgroup=true",
-                style=s_map[5]
+                style=s_map.get(1)
             )      
         ],
     ]
@@ -90,17 +96,17 @@ def stream_markup(_, chat_id):
     s_map = get_style_map()
     buttons = [
         [
-            create_btn("▷", cb=f"ADMIN Resume|{chat_id}", style=s_map[5], no_emoji=True),
-            create_btn("II", cb=f"ADMIN Pause|{chat_id}", style=s_map[5], no_emoji=True),
-            create_btn("↻", cb=f"ADMIN Replay|{chat_id}", style=s_map[5], no_emoji=True),
-            create_btn("‣‣I", cb=f"ADMIN Skip|{chat_id}", style=s_map[5], no_emoji=True),
-            create_btn("▢", cb=f"ADMIN Stop|{chat_id}", style=s_map[5], no_emoji=True),
+            create_btn("▷", cb=f"ADMIN Resume|{chat_id}", style=s_map.get(5), no_emoji=True),
+            create_btn("II", cb=f"ADMIN Pause|{chat_id}", style=s_map.get(5), no_emoji=True),
+            create_btn("↻", cb=f"ADMIN Replay|{chat_id}", style=s_map.get(5), no_emoji=True),
+            create_btn("‣‣I", cb=f"ADMIN Skip|{chat_id}", style=s_map.get(5), no_emoji=True),
+            create_btn("▢", cb=f"ADMIN Stop|{chat_id}", style=s_map.get(5), no_emoji=True),
         ],
         [
             create_btn(
                 text=_["S_B_3"], 
                 url=f"https://t.me/{app.username}?startgroup=true",
-                style=s_map[5]
+                style=s_map.get(1)
             )      
         ],
     ]
@@ -111,17 +117,17 @@ def playlist_markup(_, videoid, user_id, ptype, channel, fplay):
     s_map = get_style_map()
     buttons = [
         [
-            create_btn(_["P_B_1"], cb=f"AnonyPlaylists {videoid}|{user_id}|{ptype}|a|{channel}|{fplay}", style=s_map[2]),
-            create_btn(_["P_B_2"], cb=f"AnonyPlaylists {videoid}|{user_id}|{ptype}|v|{channel}|{fplay}", style=s_map[2]),
+            create_btn(_["P_B_1"], cb=f"AnonyPlaylists {videoid}|{user_id}|{ptype}|a|{channel}|{fplay}", style=s_map.get(2)),
+            create_btn(_["P_B_2"], cb=f"AnonyPlaylists {videoid}|{user_id}|{ptype}|v|{channel}|{fplay}", style=s_map.get(2)),
         ],
         [
-            create_btn(_["CLOSE_BUTTON"], cb=f"forceclose {videoid}|{user_id}", style=s_map[1]),
+            create_btn(_["CLOSE_BUTTON"], cb=f"forceclose {videoid}|{user_id}", style=s_map.get(1)),
         ],
         [
             create_btn(
                 text=_["S_B_3"], 
                 url=f"https://t.me/{app.username}?startgroup=true",
-                style=s_map[5]
+                style=s_map.get(1)
             )      
         ],
     ]
@@ -132,10 +138,10 @@ def livestream_markup(_, videoid, user_id, mode, channel, fplay):
     s_map = get_style_map()
     buttons = [
         [
-            create_btn(_["P_B_3"], cb=f"LiveStream {videoid}|{user_id}|{mode}|{channel}|{fplay}", style=s_map[1]),
+            create_btn(_["P_B_3"], cb=f"LiveStream {videoid}|{user_id}|{mode}|{channel}|{fplay}", style=s_map.get(1)),
         ],
         [
-            create_btn(_["CLOSE_BUTTON"], cb=f"forceclose {videoid}|{user_id}", style=s_map[1]),
+            create_btn(_["CLOSE_BUTTON"], cb=f"forceclose {videoid}|{user_id}", style=s_map.get(1)),
         ],
     ]
     return buttons
@@ -146,33 +152,33 @@ def slider_markup(_, videoid, user_id, query, query_type, channel, fplay):
     s_map = get_style_map()
     buttons = [
         [
-            create_btn(_["P_B_1"], cb=f"MusicStream {videoid}|{user_id}|a|{channel}|{fplay}", style=s_map[2]),
-            create_btn(_["P_B_2"], cb=f"MusicStream {videoid}|{user_id}|v|{channel}|{fplay}", style=s_map[2]),
+            create_btn(_["P_B_1"], cb=f"MusicStream {videoid}|{user_id}|a|{channel}|{fplay}", style=s_map.get(2)),
+            create_btn(_["P_B_2"], cb=f"MusicStream {videoid}|{user_id}|v|{channel}|{fplay}", style=s_map.get(2)),
         ],
         [
-            create_btn("◁", cb=f"slider B|{query_type}|{query}|{user_id}|{channel}|{fplay}", style=s_map[3], no_emoji=True),
-            create_btn(_["CLOSE_BUTTON"], cb=f"forceclose {query}|{user_id}", style=s_map[3]),
-            create_btn("▷", cb=f"slider F|{query_type}|{query}|{user_id}|{channel}|{fplay}", style=s_map[3], no_emoji=True),
+            create_btn("◁", cb=f"slider B|{query_type}|{query}|{user_id}|{channel}|{fplay}", style=s_map.get(3), no_emoji=True),
+            create_btn(_["CLOSE_BUTTON"], cb=f"forceclose {query}|{user_id}", style=s_map.get(3)),
+            create_btn("▷", cb=f"slider F|{query_type}|{query}|{user_id}|{channel}|{fplay}", style=s_map.get(3), no_emoji=True),
         ],
         [
             create_btn(
                 text=_["S_B_3"], 
                 url=f"https://t.me/{app.username}?startgroup=true",
-                style=s_map[5]
+                style=s_map.get(1)
             )      
         ],
     ]
     return buttons
 
 
-def queue_markup(_, videoid, chat_id, app):  # ✅ Fixed: Proper button creation
+def queue_markup(_, videoid, chat_id):  # ✅ fixed extra `app` argument hata diya kyunki ab global import hai
     s_map = get_style_map()
     buttons = [
         [
             create_btn(
                 text=_["S_B_3"], 
                 url=f"https://t.me/{app.username}?startgroup=true",
-                style=s_map[5]
+                style=s_map.get(1)
             )      
         ],
     ]
