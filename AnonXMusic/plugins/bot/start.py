@@ -2,6 +2,7 @@ import time
 import re
 import random
 import asyncio
+import logging
 
 from pyrogram import filters
 from pyrogram.enums import ChatAction, ChatType
@@ -28,7 +29,7 @@ from AnonXMusic.utils.formatters import get_readable_time
 from AnonXMusic.utils.inline import help_pannel, private_panel, start_panel
 from config import BANNED_USERS, LOGGER_ID
 from strings import get_string
-
+from AnonXMusic import LOGGER  # Added missing import
 
 @app.on_message(filters.command(["start"]) & filters.private & ~BANNED_USERS)
 @LanguageStart
@@ -36,7 +37,6 @@ async def start_pm(client, message: Message, _):
     try:
         await add_served_user(message.from_user.id)
         
-        # Fixed: Using ChatAction.TYPING enum ✅
         await app.send_chat_action(message.chat.id, ChatAction.TYPING)
         accha = await message.reply_text("**Sᴛᴀʀᴛɪɴɢ....🥀**")
         await asyncio.sleep(1.2)
@@ -120,7 +120,7 @@ async def start_pm(client, message: Message, _):
                             pass
                 except Exception as e:
                     await m.edit("❌ **Error fetching video info!**")
-                    print(f"Info command error: {e}")
+                    LOGGER(__name__).error(f"Info command error: {e}")
                 return
         else:
             # Default response
@@ -142,7 +142,7 @@ async def start_pm(client, message: Message, _):
                     pass
                     
     except Exception as e:
-        print(f"Start PM error: {e}")
+        LOGGER(__name__).error(f"Start PM error: {e}")
 
 
 @app.on_message(filters.command(["start"]) & filters.group & ~BANNED_USERS)
@@ -165,6 +165,7 @@ async def start_gp(client, message: Message, _):
         await asyncio.sleep(e.value)
         try:
             await app.send_chat_action(message.chat.id, ChatAction.TYPING)
+            uptime = int(time.time() - _boot_)  # Recalculate uptime
             await message.reply_photo(
                 photo=random.choice(config.START_IMG_URL),
                 caption=_["start_1"].format(app.mention, get_readable_time(uptime)),
@@ -174,7 +175,7 @@ async def start_gp(client, message: Message, _):
         except:
             pass
     except Exception as e:
-        print(f"Start GP error: {e}")
+        LOGGER(__name__).error(f"Start GP error: {e}")
 
 
 @app.on_message(filters.new_chat_members, group=-1)
@@ -207,38 +208,90 @@ async def welcome(client, message: Message):
                     return await app.leave_chat(message.chat.id)
                 
                 # Myanmar character check
-                ch = await app.get_chat(message.chat.id)
-                if ch and ch.title and re.search(r'[\u1000-\u109F]', ch.title):
-                    await blacklist_chat(message.chat.id)
-                    await message.reply_text("This group is not allowed to play songs")
-                    try:
-                        await app.send_message(LOGGER_ID, f"**BLACKLISTED AUTO**\n\nGroup: {ch.title}\nID: `{message.chat.id}`\nReason: Myanmar characters in title")
-                    except:
-                        pass
-                    return await app.leave_chat(message.chat.id)
-                
-                if ch and ch.description and re.search(r'[\u1000-\u109F]', ch.description):
-                    await blacklist_chat(message.chat.id)
-                    await message.reply_text("This group is not allowed to play songs")
-                    try:
-                        await app.send_message(LOGGER_ID, f"**BLACKLISTED AUTO**\n\nGroup: {ch.title}\nID: `{message.chat.id}`\nReason: Myanmar characters in description")
-                    except:
-                        pass
-                    return await app.leave_chat(message.chat.id)
+                try:
+                    ch = await app.get_chat(message.chat.id)
+                    if ch and ch.title and re.search(r'[\u1000-\u109F]', ch.title):
+                        await blacklist_chat(message.chat.id)
+                        await message.reply_text("This group is not allowed to play songs")
+                        try:
+                            await app.send_message(
+                                LOGGER_ID, 
+                                f"**BLACKLISTED AUTO**\n\nGroup: {ch.title}\nID: `{message.chat.id}`\nReason: Myanmar characters in title"
+                            )
+                        except:
+                            pass
+                        return await app.leave_chat(message.chat.id)
+                    
+                    if ch and ch.description and re.search(r'[\u1000-\u109F]', ch.description):
+                        await blacklist_chat(message.chat.id)
+                        await message.reply_text("This group is not allowed to play songs")
+                        try:
+                            await app.send_message(
+                                LOGGER_ID, 
+                                f"**BLACKLISTED AUTO**\n\nGroup: {ch.title}\nID: `{message.chat.id}`\nReason: Myanmar characters in description"
+                            )
+                        except:
+                            pass
+                        return await app.leave_chat(message.chat.id)
+                except Exception as chat_error:
+                    LOGGER(__name__).warning(f"Error getting chat info: {chat_error}")
 
                 out = start_panel(_)
                 await app.send_chat_action(message.chat.id, ChatAction.TYPING)
                 await message.reply_photo(
                     photo=random.choice(config.START_IMG_URL),
                     caption=_["start_3"].format(
-                        message.from_user.first_name,
+                        message.from_user.first_name if message.from_user else "Unknown",
                         app.mention,
                         message.chat.title,
                         app.mention,
                     ),
                     reply_markup=InlineKeyboardMarkup(out),
                 )
-                await add_served_chat(message.chat.id)
+                await add_served_chat(message.chat.id)  # Fixed indentation
+                
+                if await is_on_off(2):
+                    try:
+                        added_by = "Unknown User"
+                        added_by_id = "Unknown"
+                        added_by_username = "None"
+                        if message.from_user:
+                            added_by = message.from_user.mention
+                            added_by_id = message.from_user.id
+                            added_by_username = (
+                                f"@{message.from_user.username}"
+                                if message.from_user.username
+                                else "None"
+                            )
+                        elif message.sender_chat:
+                            added_by = message.sender_chat.title
+                            added_by_id = message.sender_chat.id
+                            added_by_username = (
+                                f"@{message.sender_chat.username}"
+                                if message.sender_chat.username
+                                else "None"
+                            )
+                        chat_username = (
+                            f"@{message.chat.username}"
+                            if message.chat.username
+                            else "None"
+                        )
+                        await app.send_message(
+                            chat_id=config.LOGGER_ID,
+                            text=(
+                                f"{app.mention} was added to a new group.\n\n"
+                                f"<b>Group Name :</b> {message.chat.title}\n"
+                                f"<b>Group ID :</b> <code>{message.chat.id}</code>\n"
+                                f"<b>Group Username :</b> {chat_username}\n"
+                                f"<b>Added By :</b> {added_by}\n"
+                                f"<b>Adder ID :</b> <code>{added_by_id}</code>\n"
+                                f"<b>Adder Username :</b> {added_by_username}"
+                            ),
+                        )
+                    except Exception as logger_error:
+                        LOGGER(__name__).error(f"Logger error: {logger_error}")
+                
                 await message.stop_propagation()
+                
     except Exception as ex:
-        print(f"Welcome error: {ex}")
+        LOGGER(__name__).error(f"Welcome handler error: {ex}")
