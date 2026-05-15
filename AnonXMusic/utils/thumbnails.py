@@ -66,36 +66,6 @@ def create_glass_panel(base_img, box, radius=35, blur=10, alpha=95):
     return final
 
 
-def create_rain_glass_panel(base_img, box, radius=35, blur=15, alpha=85):
-    """Enhanced glass panel with rain/drop effect"""
-    x1, y1, x2, y2 = box
-    w, h = x2 - x1, y2 - y1
-    
-    # Base blurred background
-    crop = base_img.crop((x1, y1, x2, y2)).filter(ImageFilter.GaussianBlur(blur))
-    
-    # Multi-layer glass effect
-    glass1 = Image.new("RGBA", (w, h), (255, 255, 255, 40))
-    glass2 = Image.new("RGBA", (w, h), (240, 240, 255, 25))
-    
-    # Composite layers
-    temp = Image.alpha_composite(crop.convert("RGBA"), glass1)
-    glass = Image.alpha_composite(temp, glass2)
-    
-    # Add subtle rain drop texture
-    draw = ImageDraw.Draw(glass)
-    for _ in range(25):  # Random rain drops
-        x = random.randint(10, w-10)
-        y = random.randint(10, h-10)
-        drop_size = random.randint(2, 5)
-        draw.ellipse([x, y, x+drop_size, y+drop_size], fill=(255, 255, 255, 60))
-    
-    mask = rounded_rectangle_mask(glass.size, radius)
-    final = Image.new("RGBA", glass.size, (0, 0, 0, 0))
-    final.paste(glass, (0, 0), mask)
-    return final
-
-
 def add_neon_glow(image, glow_color=(0, 255, 255), blur_radius=18, expand=30):
     base = image.convert("RGBA")
     w, h = base.size
@@ -141,8 +111,6 @@ async def download_user_photo(user_id: int):
 
 
 async def get_thumb(videoid, user_id):
-    import random  # Add this import for rain effect
-    
     os.makedirs("cache", exist_ok=True)
     final_path = f"cache/{videoid}_{user_id}.png"
 
@@ -202,9 +170,9 @@ async def get_thumb(videoid, user_id):
         dark_overlay = Image.new("RGBA", background.size, (0, 0, 0, 70))
         background = Image.alpha_composite(background, dark_overlay)
 
-        # Enhanced Rain Glass panel (Fixed position to avoid text overlap)
-        panel_box = (70, 110, 1210, 580)  # Reduced height to make space for branding
-        glass_panel = create_rain_glass_panel(background, panel_box, radius=40, blur=15, alpha=75)
+        # Glass panel
+        panel_box = (70, 110, 1210, 620)
+        glass_panel = create_glass_panel(background, panel_box, radius=40, blur=12, alpha=55)
         background.paste(glass_panel, (panel_box[0], panel_box[1]), glass_panel)
 
         draw = ImageDraw.Draw(background)
@@ -221,25 +189,39 @@ async def get_thumb(videoid, user_id):
         )
         background.paste(border, (panel_box[0], panel_box[1]), border_mask)
 
-        # Fonts
+        # Fonts - Added branding font
         arial = ImageFont.truetype("AnonXMusic/assets/font2.ttf", 30)
         font = ImageFont.truetype("AnonXMusic/assets/font.ttf", 34)
         small_font = ImageFont.truetype("AnonXMusic/assets/font2.ttf", 24)
-        branding_font = ImageFont.truetype("AnonXMusic/assets/font2.ttf", 20)  # Smaller for branding
+        branding_font = ImageFont.truetype("AnonXMusic/assets/font2.ttf", 22)  # Branding font
 
-        # Left neon youtube thumb
+        # Left neon youtube thumb - FIXED IMAGE POSITIONING
         yt_circle = circle(youtube)
         yt_circle = changeImageSize(210, 210, yt_circle)
         yt_glow = add_neon_glow(yt_circle, glow_color=(255, 0, 170), blur_radius=22, expand=24)
-        background.paste(yt_glow, (115, 210), yt_glow)
+        # Ensure proper positioning within bounds
+        glow_w, glow_h = yt_glow.size
+        paste_pos = (115, 210)
+        if paste_pos[0] + glow_w <= 1280 and paste_pos[1] + glow_h <= 720:
+            background.paste(yt_glow, paste_pos, yt_glow)
+        else:
+            # Fallback: paste without glow if too big
+            background.paste(yt_circle, (115, 210), yt_circle)
 
-        # Right neon user dp
+        # Right neon user dp - FIXED IMAGE POSITIONING
         if user_photo_path and os.path.isfile(user_photo_path):
             user_img = Image.open(user_photo_path).convert("RGBA")
             user_circle = circle(user_img)
             user_circle = changeImageSize(210, 210, user_circle)
             user_glow = add_neon_glow(user_circle, glow_color=(0, 255, 255), blur_radius=22, expand=24)
-            background.paste(user_glow, (930, 210), user_glow)
+            # Ensure proper positioning within bounds
+            glow_w, glow_h = user_glow.size
+            paste_pos = (930, 210)
+            if paste_pos[0] + glow_w <= 1280 and paste_pos[1] + glow_h <= 720:
+                background.paste(user_glow, paste_pos, user_glow)
+            else:
+                # Fallback: paste without glow if too big
+                background.paste(user_circle, (930, 210), user_circle)
 
         # Top branding
         draw_text_with_glow(
@@ -260,7 +242,7 @@ async def get_thumb(videoid, user_id):
             glow_fill=(255, 0, 170),
         )
 
-        # Song details (Adjusted positions to fit better)
+        # Song details
         draw_text_with_glow(
             draw,
             (330, 270),
@@ -298,27 +280,27 @@ async def get_thumb(videoid, user_id):
             font=small_font,
         )
         
-        # Music bar (Adjusted position)
+        # Music bar
         draw.rounded_rectangle(
-            (140, 505, 1140, 525),  # Moved up to fit in panel
+            (140, 555, 1140, 575),
             radius=10,
             fill=(255, 255, 255, 70),
         )
         draw.rounded_rectangle(
-            (140, 505, 700, 525),
+            (140, 555, 700, 575),
             radius=10,
             fill=(0, 255, 255, 170),
         )
-        draw.ellipse((690, 492, 718, 526), fill=(255, 255, 255))
+        draw.ellipse((690, 548, 718, 582), fill=(255, 255, 255))
 
-        draw.text((135, 535), "00:00", fill="white", font=small_font)
-        draw.text((1070, 535), f"{duration[:20]}", fill="white", font=small_font)
+        draw.text((135, 585), "00:00", fill="white", font=small_font)
+        draw.text((1070, 585), f"{duration[:20]}", fill="white", font=small_font)
 
         # Soft neon lines
         draw.line((115, 195, 1165, 195), fill=(255, 255, 255, 90), width=2)
-        draw.line((115, 470, 1165, 470), fill=(255, 255, 255, 70), width=2)  # Adjusted position
+        draw.line((115, 520, 1165, 520), fill=(255, 255, 255, 70), width=2)
 
-        # Branding texts at bottom corners (NEW)
+        # BRANDING TEXT - Added at bottom
         draw_text_with_glow(
             draw, 
             (85, 610),  # Bottom left
