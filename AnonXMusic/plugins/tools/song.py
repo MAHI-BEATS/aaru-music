@@ -5,6 +5,8 @@ import logging
 import asyncio
 from typing import Optional, Tuple
 from pathlib import Path
+import aiohttp
+import aiofiles
 
 from pyrogram import filters
 from pyrogram.types import Message
@@ -51,7 +53,7 @@ def is_playlist(url: str) -> bool:
 )
 @language
 async def song_download(client, message: Message, _):
-    """🎵 Main song download handler - PRODUCTION READY"""
+    """🎵 Main song download handler - ✅ THUMBNAIL FIXED"""
     
     query = (await YouTube.url(message)) or extract_song_query(message)
     
@@ -83,6 +85,7 @@ async def song_download(client, message: Message, _):
     )
     
     file_path: Optional[str] = None
+    thumb_path: Optional[str] = None
     
     try:
         logger.info(f"🔍 Searching: {query[:50]}")
@@ -101,7 +104,7 @@ async def song_download(client, message: Message, _):
         
         logger.info(f"📹 Found: {title[:50]} | ID: {video_id}")
         
-        # 🚀 ROBUST DOWNLOAD WITH RETRY LOGIC
+        # 🚀 ROBUST DOWNLOAD WITH RETRY
         await status_msg.edit_text(f"⬇️ **Downloading MP3...**\n\n{POWERED_BY}")
         
         max_retries = 3
@@ -115,7 +118,7 @@ async def song_download(client, message: Message, _):
                     video_id, status_msg, videoid=True
                 )
                 
-                if file_path:
+                if file_path and Path(file_path).exists():
                     download_success = True
                     logger.info(f"✅ Download success on attempt {attempt + 1}")
                     break
@@ -131,10 +134,7 @@ async def song_download(client, message: Message, _):
                         f"{POWERED_BY}"
                     )
                 else:
-                    raise RuntimeError(
-                        f"Download failed after {max_retries} attempts. "
-                        f"API may be temporarily unavailable."
-                    )
+                    raise RuntimeError("Download failed after 3 attempts")
         
         if not download_success:
             raise RuntimeError("Download process did not complete")
@@ -142,7 +142,7 @@ async def song_download(client, message: Message, _):
         # ✅ COMPREHENSIVE FILE VALIDATION
         file_path_obj = Path(file_path)
         if not file_path_obj.exists():
-            raise RuntimeError("Downloaded file missing after validation")
+            raise RuntimeError("Downloaded file missing")
         
         stat = file_path_obj.stat()
         file_size = stat.st_size
@@ -154,6 +154,29 @@ async def song_download(client, message: Message, _):
             raise RuntimeError(f"File too large: {file_size / 1024**2:.1f} MB")
         
         logger.info(f"✅ File validated: {file_size / 1024:.1f} KB")
+        
+        # 🖼️ DOWNLOAD THUMBNAIL (FIXED)
+        if thumb and thumb.startswith('http'):
+            try:
+                thumb_path = f"temp_thumb_{video_id}.jpg"
+                logger.info(f"🖼️ Downloading thumbnail: {thumb}")
+                
+                async with aiohttp.ClientSession() as session:
+                    async with session.get(thumb, timeout=aiohttp.ClientTimeout(total=10)) as resp:
+                        if resp.status == 200:
+                            content = await resp.read()
+                            async with aiofiles.open(thumb_path, 'wb') as f:
+                                await f.write(content)
+                            logger.info(f"✅ Thumbnail saved: {thumb_path}")
+                        else:
+                            logger.warning(f"⚠️ Thumbnail HTTP {resp.status}")
+                            thumb_path = None
+                            
+            except Exception as thumb_err:
+                logger.warning(f"⚠️ Thumbnail download failed: {thumb_err}")
+                thumb_path = None
+        else:
+            thumb_path = thumb  # Already local file
         
         # 📱 PREPARE CAPTION
         user = message.from_user
@@ -172,7 +195,7 @@ async def song_download(client, message: Message, _):
             f"{POWERED_BY}"
         )
         
-        # 📤 SEND AUDIO
+        # 📤 SEND AUDIO (✅ THUMBNAIL FIXED)
         await status_msg.edit_text(
             f"📤 **Sending high quality MP3...**\n"
             f"`{file_size / 1024:.1f} KB`\n\n"
@@ -186,7 +209,7 @@ async def song_download(client, message: Message, _):
             duration=duration_sec or 0,
             title=title[:100],
             performer="BETA BOTS",
-            thumb=thumb,
+            thumb=thumb_path,  # ✅ Now always a local file path or None
             reply_to_message_id=message.id
         )
         
@@ -209,20 +232,26 @@ async def song_download(client, message: Message, _):
         await status_msg.edit_text(user_friendly_msg)
     
     finally:
-        # 🧹 CLEANUP - FIXED INDENTATION
+        # 🧹 CLEANUP - ALL FILES
         try:
             await status_msg.delete()
         except Exception:
             pass
         
-        if file_path is not None:
+        cleanup_paths = []
+        if file_path:
+            cleanup_paths.append(file_path)
+        if thumb_path and Path(thumb_path).exists():
+            cleanup_paths.append(thumb_path)
+        
+        for path in cleanup_paths:
             try:
-                path_obj = Path(file_path)
+                path_obj = Path(path)
                 if path_obj.exists():
                     path_obj.unlink()
-                    logger.debug(f"🧹 Cleanup: {file_path}")
+                    logger.debug(f"🧹 Cleanup: {path}")
             except Exception as cleanup_err:
-                logger.warning(f"Cleanup failed {file_path}: {cleanup_err}")
+                logger.warning(f"Cleanup failed {path}: {cleanup_err}")
 
 
 # 🔗 AUTO YOUTUBE HANDLER
