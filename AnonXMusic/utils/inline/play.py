@@ -75,6 +75,13 @@ def stream_markup_timer(_, chat_id, played, dur):
             create_btn("‣‣I", cb=f"ADMIN Skip|{chat_id}", style=s_map[5], no_emoji=True),
             create_btn("▢", cb=f"ADMIN Stop|{chat_id}", style=s_map[5], no_emoji=True),
         ],
+        [
+            create_btn(
+                text=_["S_B_3"], 
+                url=f"https://t.me/{app.username}?startgroup=true",
+                style=s_map[5]
+            )      
+        ],
     ]
     return buttons
 
@@ -89,6 +96,13 @@ def stream_markup(_, chat_id):
             create_btn("‣‣I", cb=f"ADMIN Skip|{chat_id}", style=s_map[5], no_emoji=True),
             create_btn("▢", cb=f"ADMIN Stop|{chat_id}", style=s_map[5], no_emoji=True),
         ],
+        [
+            create_btn(
+                text=_["S_B_3"], 
+                url=f"https://t.me/{app.username}?startgroup=true",
+                style=s_map[5]
+            )      
+        ],
     ]
     return buttons
 
@@ -102,6 +116,13 @@ def playlist_markup(_, videoid, user_id, ptype, channel, fplay):
         ],
         [
             create_btn(_["CLOSE_BUTTON"], cb=f"forceclose {videoid}|{user_id}", style=s_map[1]),
+        ],
+        [
+            create_btn(
+                text=_["S_B_3"], 
+                url=f"https://t.me/{app.username}?startgroup=true",
+                style=s_map[5]
+            )      
         ],
     ]
     return buttons
@@ -132,6 +153,13 @@ def slider_markup(_, videoid, user_id, query, query_type, channel, fplay):
             create_btn("◁", cb=f"slider B|{query_type}|{query}|{user_id}|{channel}|{fplay}", style=s_map[3], no_emoji=True),
             create_btn(_["CLOSE_BUTTON"], cb=f"forceclose {query}|{user_id}", style=s_map[3]),
             create_btn("▷", cb=f"slider F|{query_type}|{query}|{user_id}|{channel}|{fplay}", style=s_map[3], no_emoji=True),
+        ],
+        [
+            create_btn(
+                text=_["S_B_3"], 
+                url=f"https://t.me/{app.username}?startgroup=true",
+                style=s_map[5]
+            )      
         ],
     ]
     return buttons
