@@ -40,8 +40,8 @@ async def start_pm(client, message: Message, _):
     await asyncio.sleep(1)
     await accha.edit("**I..Aᴍ..Aʟɪᴠe..Bᴀʙʏ...🍫**")
     await asyncio.sleep(0.5)
-    await accha.edit("**Bᴇᴛᴀ..Bᴏᴛs.....😱**")
-    await asyncio.sleep(0.5)
+    await accha.edit("**Bᴇᴛᴀ..Bᴏᴛs.....❤️❤️v**")
+    await asyncio.sleep(1)
     await accha.delete()
     
     if len(message.text.split()) > 1:
@@ -107,7 +107,7 @@ async def start_pm(client, message: Message, _):
     else:
         # Default response with sticker AFTER loading animation
         out = private_panel(_)
-        await message.reply_sticker("CAACAgUAAx0CdQO5IgACMTplUFOpwDjf-UC7pqVt9uG659qxWQACfQkAAghYGFVtSkRZ5FZQXDME")
+        await message.reply_sticker("CAACAgUAAxkBAAFJgZ1qBGwx9Z9vW5BhG3dw0l1A5j4CyQACXRYAAuc-wVWs4--9DGlDKzsE")
         await message.reply_photo(
             photo=random.choice(config.START_IMG_URL),
             caption=_["start_2"].format(message.from_user.mention, app.mention),
