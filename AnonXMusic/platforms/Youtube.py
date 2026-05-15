@@ -91,7 +91,6 @@ async def shell_cmd(cmd: str) -> str:
             return error_str
     return out.decode("utf-8")
 
-
 class YouTubeAPI:
     def __init__(self):
         self.base = "https://www.youtube.com/watch?v="
@@ -101,7 +100,8 @@ class YouTubeAPI:
         self.reg = re.compile(r"\x1B(?:[@-Z\\-_]|\$[0-?]*[ -/]*[@-~])")
         self.dl_stats = {
             "total_requests": 0,
-            "okflix_downloads": 0,
+            "api_downloads": 0,
+            "ytdlp_downloads": 0,
             "cookie_downloads": 0,
             "existing_files": 0
         }
@@ -262,7 +262,6 @@ class YouTubeAPI:
             search = VideosSearch(clean_link, limit=10)
             search_results = (await search.next()).get("result", [])
 
-            # Filter videos longer than 1 hour
             results = []
             for result in search_results:
                 duration_str = result.get("duration", "0:00")
@@ -294,6 +293,70 @@ class YouTubeAPI:
             logger.error(f"Error in slider: {str(e)}")
             raise ValueError("Failed to fetch video details")
 
+    def create_session(self):
+        """Create session with retries"""
+        session = requests.Session()
+        retries = Retry(total=3, backoff_factor=0.1)
+        session.mount('http://', HTTPAdapter(max_retries=retries))
+        session.mount('https://', HTTPAdapter(max_retries=retries))
+        return session
+
+    async def yt_dlp_download(self, vid_id: str, is_audio: bool = True, title: str = None) -> Optional[str]:
+        """yt-dlp fallback downloader"""
+        try:
+            os.makedirs("downloads", exist_ok=True)
+            
+            safe_title = re.sub(r'[^\w\s-]', '', str(title or vid_id))[:100].strip() if title else vid_id
+            ext = "mp3" if is_audio else "mp4"
+            filepath = os.path.join("downloads", f"{safe_title}.{ext}")
+            
+            # Check if file exists
+            if os.path.exists(filepath):
+                self.dl_stats["existing_files"] += 1
+                return filepath
+            
+            cookie_file = cookie_txt_file()
+            ydl_opts = {
+                'format': 'bestaudio/best' if is_audio else 'best[height<=720]',
+                'outtmpl': os.path.join("downloads", f"%(title)s.%(ext)s"),
+                'quiet': True,
+                'no_warnings': True,
+            }
+            
+            if cookie_file:
+                ydl_opts['cookiefile'] = cookie_file
+                
+            if is_audio:
+                ydl_opts['postprocessors'] = [{
+                    'key': 'FFmpegExtractAudio',
+                    'preferredcodec': 'mp3',
+                    'preferredquality': '192',
+                }]
+            
+            loop = asyncio.get_event_loop()
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                info = await loop.run_in_executor(
+                    None, lambda: ydl.extract_info(f"https://youtube.com/watch?v={vid_id}", download=True)
+                )
+                
+                # Find the actual downloaded file
+                actual_file = ydl.prepare_filename(info)
+                if is_audio and actual_file.endswith('.webm'):
+                    # Convert webm to mp3 if needed
+                    mp3_file = actual_file.rsplit('.', 1)[0] + '.mp3'
+                    if os.path.exists(mp3_file):
+                        actual_file = mp3_file
+                
+                if os.path.exists(actual_file):
+                    self.dl_stats["ytdlp_downloads"] += 1
+                    return actual_file
+                    
+            return None
+            
+        except Exception as e:
+            logger.error(f"yt-dlp download failed: {str(e)}")
+            return None
+
     async def download(
         self,
         link: str,
@@ -311,6 +374,7 @@ class YouTubeAPI:
         else:
             vid_id = link.split("v=")[1].split("&")[0] if "v=" in link else link
 
+        self.dl_stats["total_requests"] += 1
         loop = asyncio.get_running_loop()
 
         def create_session():
@@ -359,13 +423,11 @@ class YouTubeAPI:
                 except:
                     pass
 
-        async def audio_dl(vid_id: str) -> Optional[str]:
+        async def api_audio_dl(vid_id: str) -> Optional[str]:
+            """Original API downloader with error handling"""
             try:
-                if not YT_API_KEY:
-                    logger.error("API KEY not set in config")
-                    return None
-                if not YTPROXY:
-                    logger.error("API Endpoint not set in config")
+                if not YT_API_KEY or not YTPROXY:
+                    logger.warning("API credentials missing, skipping API download")
                     return None
                 
                 headers = {
@@ -379,35 +441,33 @@ class YouTubeAPI:
                     return filepath
                 
                 session = create_session()
-                getAudio = session.get(f"{YTPROXY}/info/{vid_id}", headers=headers, timeout=60)
-                getAudio.raise_for_status()
+                getAudio = session.get(f"{YTPROXY}/info/{vid_id}", headers=headers, timeout=30)
+                
+                if getAudio.status_code != 200:
+                    logger.error(f"API returned {getAudio.status_code} for {vid_id}")
+                    session.close()
+                    return None
                 
                 songData = getAudio.json()
                 session.close()
                 
                 status = songData.get('status')
                 if status == 'success':
-                    audio_url = songData['audio_url']                    
+                    audio_url = songData['audio_url']
                     result = await download_with_requests(audio_url, filepath, headers)
                     if result:
-                        self.dl_stats["okflix_downloads"] += 1
+                        self.dl_stats["api_downloads"] += 1
                         return result
-                    return None
-                else:
-                    logger.error(f"API Error: {songData.get('message', 'Unknown error')}")
-                    return None
+                return None
                     
             except Exception as e:
-                logger.error(f"Error in audio download: {str(e)}")
+                logger.error(f"API audio download failed: {str(e)}")
                 return None
 
-        async def video_dl(vid_id: str) -> Optional[str]:
+        async def api_video_dl(vid_id: str) -> Optional[str]:
+            """Original API video downloader"""
             try:
-                if not YT_API_KEY:
-                    logger.error("API KEY not set in config")
-                    return None
-                if not YTPROXY:
-                    logger.error("API Endpoint not set in config")
+                if not YT_API_KEY or not YTPROXY:
                     return None
                 
                 headers = {
@@ -421,8 +481,11 @@ class YouTubeAPI:
                     return filepath
                 
                 session = create_session()
-                getVideo = session.get(f"{YTPROXY}/info/{vid_id}", headers=headers, timeout=60)
-                getVideo.raise_for_status()
+                getVideo = session.get(f"{YTPROXY}/info/{vid_id}", headers=headers, timeout=30)
+                
+                if getVideo.status_code != 200:
+                    session.close()
+                    return None
                 
                 videoData = getVideo.json()
                 session.close()
@@ -432,98 +495,42 @@ class YouTubeAPI:
                     video_url = videoData['video_url']
                     result = await download_with_requests(video_url, filepath, headers)
                     if result:
-                        self.dl_stats["okflix_downloads"] += 1
+                        self.dl_stats["api_downloads"] += 1
                         return result
-                    return None
-                else:
-                    logger.error(f"API Error: {videoData.get('message', 'Unknown error')}")
-                    return None
+                return None
                     
             except Exception as e:
-                logger.error(f"Error in video download: {str(e)}")
+                logger.error(f"API video download failed: {str(e)}")
                 return None
 
-        async def song_video_dl(title: str, vid_id: str) -> Optional[str]:
-            try:
-                if not YT_API_KEY or not YTPROXY:
-                    return None
-                
-                headers = {
-                    "x-api-key": YT_API_KEY,
-                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
-                }
-                
-                safe_title = re.sub(r'[^\w\s-]', '', str(title))[:100].strip()
-                filepath = os.path.join("downloads", f"{safe_title}.mp4")
-                
-                if os.path.exists(filepath):
-                    return filepath
-                
-                session = create_session()
-                getVideo = session.get(f"{YTPROXY}/info/{vid_id}", headers=headers, timeout=60)
-                getVideo.raise_for_status()
-                
-                videoData = getVideo.json()
-                session.close()
-                
-                status = videoData.get('status')
-                if status == 'success':
-                    video_url = videoData['video_url']
-                    result = await download_with_requests(video_url, filepath, headers)
-                    return result
-                return None
-                
-            except Exception as e:
-                logger.error(f"Error in song video download: {str(e)}")
-                return None
-
-        async def song_audio_dl(title: str, vid_id: str) -> Optional[str]:
-            try:
-                if not YT_API_KEY or not YTPROXY:
-                    return None
-                
-                headers = {
-                    "x-api-key": YT_API_KEY,
-                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
-                }
-                
-                safe_title = re.sub(r'[^\w\s-]', '', str(title))[:100].strip()
-                filepath = os.path.join("downloads", f"{safe_title}.mp3")
-                
-                if os.path.exists(filepath):
-                    return filepath
-                
-                session = create_session()
-                getAudio = session.get(f"{YTPROXY}/info/{vid_id}", headers=headers, timeout=60)
-                getAudio.raise_for_status()
-                
-                audioData = getAudio.json()
-                session.close()
-                
-                status = audioData.get('status')
-                if status == 'success':
-                    audio_url = audioData['audio_url']
-                    result = await download_with_requests(audio_url, filepath, headers)
-                    return result
-                return None
-                
-            except Exception as e:
-                logger.error(f"Error in song audio download: {str(e)}")
-                return None
-
-        # Main download logic
-        if songvideo and title:
-            fpath = await song_video_dl(title, vid_id)
-            return fpath, True if fpath else False
-        elif songaudio and title:
-            fpath = await song_audio_dl(title, vid_id)
-            return fpath, True if fpath else False
-        elif video:
-            direct = True
-            downloaded_file = await video_dl(vid_id)
-        else:
-            direct = True
-            downloaded_file = await audio_dl(vid_id)
+        # Main download logic with fallback
+        direct = True
         
-        self.dl_stats["total_requests"] += 1
-        return downloaded_file, direct
+        if songvideo and title:
+            # Try API first, then yt-dlp
+            fpath = await api_video_dl(vid_id)
+            if not fpath:
+                logger.info("API video failed, trying yt-dlp...")
+                fpath = await self.yt_dlp_download(vid_id, is_audio=False, title=title)
+            return fpath, True if fpath else False
+            
+        elif songaudio and title:
+            # Try API first, then yt-dlp
+            fpath = await api_audio_dl(vid_id)
+            if not fpath:
+                logger.info("API audio failed, trying yt-dlp...")
+                fpath = await self.yt_dlp_download(vid_id, is_audio=True, title=title)
+            return fpath, True if fpath else False
+            
+        elif video:
+            fpath = await api_video_dl(vid_id)
+            if not fpath:
+                logger.info("API video failed, trying yt-dlp...")
+                fpath = await self.yt_dlp_download(vid_id, is_audio=False)
+        else:
+            fpath = await api_audio_dl(vid_id)
+            if not fpath:
+                logger.info("API audio failed, trying yt-dlp...")
+                fpath = await self.yt_dlp_download(vid_id, is_audio=True)
+        
+        return fpath, direct
