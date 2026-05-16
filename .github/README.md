@@ -72,7 +72,7 @@ Need help or want to subscribe?
 
 Telegram:[𝐀𝐏𝐈 𝐚𝐧𝐝 𝐩𝐫𝐨𝐦𝐨𝐭𝐢𝐨𝐧](https://t.me/Api_and_promotion)
 
-Maintained by:  [Xbitcode](https://xbitcode.com/)
+Maintained by:  [BETA BOTS](https://t.me/betabot_hub)
 
 ---
 
@@ -132,7 +132,7 @@ Press `Ctrl+C` when you're done with editing env and `:wq` to save the env<br>
 </h3>
 
 <p align="center">
-<a href="https://t.me/stranger_support"><img src="https://img.shields.io/badge/-Support%20Group-blue.svg?style=for-the-badge&logo=Telegram"></a>
+<a href="https://t.me/betabot_support"><img src="https://img.shields.io/badge/-Support%20Group-blue.svg?style=for-the-badge&logo=Telegram"></a>
 </p>
 
 <p align="center">
@@ -144,8 +144,5 @@ Press `Ctrl+C` when you're done with editing env and `:wq` to save the env<br>
 </p>
 ```
 
-- <b> _sᴩᴇᴄɪᴀʟ ᴛʜᴀɴᴋs ᴛᴏ Sparrow For [Core Development](https://github.com/sparrow9616)
-- <br>_sᴩᴇᴄɪᴀʟ ᴛʜᴀɴᴋs ᴛᴏ  Rehanna For [Youtube Proxy](https://github.com/gr8rehanna) 
-- <br>_Maintainer  [Ami](https://github.com/amjiddader)
-- <br>__sᴩᴇᴄɪᴀʟ ᴛʜᴀɴᴋs ᴛᴏ Team yukki and Anon for base repository ♥️.
+- <br>__sᴩᴇᴄɪᴀʟ ᴛʜᴀɴᴋs ᴛᴏ Team ISTKHAR and SHIV for base repository ♥️.
 
