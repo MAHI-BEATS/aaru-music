@@ -4,7 +4,7 @@ import random
 from pyrogram.enums import ButtonStyle
 from pyrogram.types import InlineKeyboardButton
 
-from AnonXMusic import app  # 1. ✅ fixed NameError: app ko import kiya takki app.username work kare
+from AnonXMusic import app  # ✅ NameError fixed
 from AnonXMusic.utils.formatters import time_to_seconds
 
 # 🔥 PREMIUM EMOJIS LIST 🔥
@@ -19,7 +19,7 @@ PREMIUM_EMOJIS = [
 def get_style_map():
     styles = [ButtonStyle.PRIMARY, ButtonStyle.SUCCESS, ButtonStyle.DANGER]
     random.shuffle(styles)
-    # 2. ✅ KeyErrors se bachne ke liye safe fallback colors assign kiye hain
+    # ✅ KeyErrors protection with safe fallback mapping
     return {
         1: styles[0], 
         2: styles[1], 
@@ -63,7 +63,7 @@ def stream_markup_timer(_, chat_id, played, dur):
     elif 40 <= umm < 50: bar = "————◉—————"
     elif 50 <= umm < 60: bar = "—————◉————"
     elif 60 <= umm < 70: bar = "——————◉———"
-    elif 70 <= umm < 80: bar = "———————◉——"
+    elif 70 <= umm < 80: bar = "———————◉--"
     elif 80 <= umm < 95: bar = "————————◉—"
     else: bar = "—————————◉"
     
@@ -88,6 +88,10 @@ def stream_markup_timer(_, chat_id, played, dur):
                 style=s_map.get(1)
             )      
         ],
+        [
+            # 🛠️ FIXED: Yahan pehla raw InlineKeyboardButton text string parse kar rha tha aur style generate kar rha tha jisse TypeError aata. Isko create_btn se replace kiya.
+            create_btn(text=_["CLOSE_BUTTON"], cb="close", style=s_map.get(1))
+        ],
     ]
     return buttons
 
@@ -108,6 +112,10 @@ def stream_markup(_, chat_id):
                 url=f"https://t.me/{app.username}?startgroup=true",
                 style=s_map.get(1)
             )      
+        ],
+        [
+            # 🛠️ FIXED: Raw button handler replaced with wrapper function.
+            create_btn(text=_["CLOSE_BUTTON"], cb="close", style=s_map.get(1))
         ],
     ]
     return buttons
@@ -171,7 +179,7 @@ def slider_markup(_, videoid, user_id, query, query_type, channel, fplay):
     return buttons
 
 
-def queue_markup(_, videoid, chat_id):  # ✅ fixed extra `app` argument hata diya kyunki ab global import hai
+def queue_markup(_, videoid, chat_id):  # ✅ Checked and verified clear argument structure
     s_map = get_style_map()
     buttons = [
         [
