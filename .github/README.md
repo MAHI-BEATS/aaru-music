@@ -99,7 +99,7 @@ Users must follow YouTube’s Terms of Service and Telegram’s Bot Policy.
     ─「 ᴅᴇᴩʟᴏʏ ᴏɴ ʟᴏᴄᴀʟ ʜᴏsᴛ/ ᴠᴘs 」─
 </h3>
 
-- Get your [Necessary Variables](https://github.com/xbitcode/music/blob/main/sample.env)
+- Get your [Necessary Variables](https://github.com/MAHI-BEATS/aaru-music/blob/main/sample.env)
 - Upgrade and Update by :
 `sudo apt-get update && sudo apt-get upgrade -y`
 - Install Ffmpeg by :
@@ -140,7 +140,7 @@ Press `Ctrl+C` when you're done with editing env and `:wq` to save the env<br>
 </p>
 
 <p align="center">
-  Made with ❤️ by <strong>XBITCODE</strong>
+  Made with ❤️ by <strong>THE SHIV</strong>
 </p>
 ```
 
